@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:realtime_innovations/constants/index.dart';
 import 'package:realtime_innovations/theme/app_colors.dart';
@@ -51,11 +52,15 @@ class CustomDatePickerState extends State<CustomDatePicker> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isWeb = width >= 600;
+
     return Center(
       child: Material(
         color: Colors.transparent,
         child: Container(
-          width: MediaQuery.of(context).size.width * 0.95,
+          constraints: BoxConstraints(maxWidth: isWeb ? width * 0.5 : double.infinity),
+          width: width * 0.95,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),

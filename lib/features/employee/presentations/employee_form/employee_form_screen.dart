@@ -24,7 +24,6 @@ class EmployeeFormScreen extends StatefulWidget {
 
 class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
   final _formKey = GlobalKey<FormState>();
-
   late TextEditingController _nameController;
   final TextEditingController _roleController = TextEditingController();
   DateTime? _startDate;
@@ -38,7 +37,6 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
     _nameController = TextEditingController();
 
     final employee = widget.employee;
-
     if (employee != null) {
       _nameController.text = employee.name;
       _roleController.text = employee.role;
@@ -90,16 +88,13 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final role = _roleController.text;
-
     if (role.isEmpty) {
       SnackUtils.error(context, 'Please select a role');
-
       return;
     }
 
     if (_startDate == null) {
       SnackUtils.error(context, 'Please select start date');
-
       return;
     }
 
@@ -131,129 +126,115 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 22),
         title: Text('${_isEditing ? 'Edit' : 'Add'} Employee Details'),
         actions: [
-          if (_isEditing) ...[
+          if (_isEditing)
             IconButton(
               onPressed: _deleteEmployee,
               icon: const Icon(Icons.delete),
             ),
-          ],
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: _nameController,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a name';
-                          }
-                          return null;
-                        },
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          bool isWideScreen = constraints.maxWidth > 600;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Wrap(
+                runSpacing: 16,
+                spacing: isWideScreen ? 20 : 0,
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    validator: (value) => value?.isEmpty ?? true ? 'Please enter a name' : null,
+                    decoration: CustomTextTheme.decorationIcon(Assets.iconProfile).copyWith(
+                      labelText: 'Employee Name',
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _showRoleBottomSheet(context),
+                    child: AbsorbPointer(
+                      child: TextFormField(
+                        controller: _roleController,
                         decoration: CustomTextTheme.decorationIcon(Assets.iconProfile).copyWith(
-                          labelText: 'Employee Name',
+                          labelText: 'Select role',
+                          suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1DA1F2)),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      GestureDetector(
-                        onTap: () => _showRoleBottomSheet(context),
-                        child: AbsorbPointer(
-                          child: TextFormField(
-                            controller: _roleController,
-                            decoration: CustomTextTheme.decorationIcon(Assets.iconProfile).copyWith(
-                              labelText: 'Select role',
-                              suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1DA1F2)),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: _selectStartDate,
+                          child: InputDecorator(
+                            decoration: CustomTextTheme.decorationIcon(Assets.iconDate).copyWith(
+                              labelText: 'Start Date',
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectStartDate,
-                              child: InputDecorator(
-                                decoration: CustomTextTheme.decorationIcon(Assets.iconDate).copyWith(
-                                  labelText: 'Start Date',
-                                ),
-                                child: Text(
-                                  CustomDateUtils.formatOrNull(_startDate) ?? 'No date',
-                                  style: TextStyle(
-                                    color: _startDate != null ? Colors.black : Colors.grey,
-                                  ),
-                                ),
+                            child: Text(
+                              CustomDateUtils.formatOrNull(_startDate) ?? 'No date',
+                              style: TextStyle(
+                                color: _startDate != null ? Colors.black : Colors.grey,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16.0),
-                          const ImageIcon(
-                            Assets.iconArrow,
-                            color: Color(0xFF1DA1F2),
-                            size: 14,
-                          ),
-                          const SizedBox(width: 16.0),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectEndDate,
-                              child: InputDecorator(
-                                decoration: CustomTextTheme.decorationIcon(Assets.iconDate).copyWith(
-                                  labelText: 'End Date',
-                                ),
-                                child: Text(
-                                  CustomDateUtils.formatOrNull(_endDate) ?? 'No date',
-                                  style: TextStyle(
-                                    color: _endDate != null ? Colors.black : Colors.grey,
-                                  ),
-                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 16.0),
+                      const ImageIcon(Assets.iconArrow, color: Color(0xFF1DA1F2), size: 14),
+                      const SizedBox(width: 16.0),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _selectEndDate,
+                          child: InputDecorator(
+                            decoration: CustomTextTheme.decorationIcon(Assets.iconDate).copyWith(
+                              labelText: 'End Date',
+                            ),
+                            child: Text(
+                              CustomDateUtils.formatOrNull(_endDate) ?? 'No date',
+                              style: TextStyle(
+                                color: _endDate != null ? Colors.black : Colors.grey,
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ),
+                  const Divider(),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEDF8FF),
+                            foregroundColor: const Color(0xFF1DA1F2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1DA1F2),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          ),
+                          onPressed: _onSave,
+                          child: const Text('Save'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const Divider(),
-          SafeArea(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEDF8FF),
-                    foregroundColor: const Color(0xFF1DA1F2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1DA1F2),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  ),
-                  onPressed: _onSave,
-                  child: const Text('Save'),
-                ),
-                const SizedBox(width: 16),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

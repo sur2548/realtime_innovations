@@ -1,16 +1,26 @@
-import 'package:objectbox/objectbox.dart';
+import 'package:hive/hive.dart';
 
-@Entity()
-class Employee {
-  @Id()
-  int id = 0;
+part 'employee.g.dart';
+
+@HiveType(typeId: 0)  // Assign a unique typeId
+class Employee extends HiveObject {
+  @HiveField(0)
+  int id;
+
+  @HiveField(1)
   String name;
+
+  @HiveField(2)
   String role;
+
+  @HiveField(3)
   DateTime startDate;
+
+  @HiveField(4)
   DateTime? endDate;
 
   Employee({
-    this.id = 0,
+    required this.id,
     required this.name,
     required this.role,
     required this.startDate,

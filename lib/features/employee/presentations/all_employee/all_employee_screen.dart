@@ -43,110 +43,106 @@ class EmployeeListScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
-      body: BlocConsumer<EmployeeCubit, EmployeeState>(
-        listener: (context, state) {
-          if (state is EmployeeEditOperationSuccess) {
-            SnackUtils.success(context, 'Employee data has been updated');
-          }
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: BlocConsumer<EmployeeCubit, EmployeeState>(
+              listener: (context, state) {
+                if (state is EmployeeEditOperationSuccess) {
+                  SnackUtils.success(context, 'Employee data has been updated');
+                }
 
-          if (state is EmployeeDeleteOperationSuccess) {
-            SnackUtils.action(
-              context,
-              'Employee data has been deleted',
-              'Undo',
-              () {
-                context.read<EmployeeCubit>().undoDelete();
+                if (state is EmployeeDeleteOperationSuccess) {
+                  SnackUtils.action(
+                    context,
+                    'Employee data has been deleted',
+                    'Undo',
+                    () {
+                      context.read<EmployeeCubit>().undoDelete();
+                    },
+                  );
+                }
+
+                if (state is EmployeeOperationFailure) {
+                  SnackUtils.error(context, state.error);
+                }
               },
-            );
-          }
+              builder: (context, state) {
+                if (state is EmployeesLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          if (state is EmployeeOperationFailure) {
-            SnackUtils.error(context, state.error);
-          }
-        },
-        builder: (context, state) {
-          if (state is EmployeesLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+                if (state is EmployeeLoadingFailure) {
+                  return Center(child: Text(state.error));
+                }
 
-          if (state is EmployeeLoadingFailure) {
-            return Center(child: Text(state.error));
-          }
+                if (state is EmployeesLoaded) {
+                  final currentEmployee = state.employees.where((e) => e.endDate == null).toList();
+                  final previousEmployee = state.employees.where((e) => e.endDate != null).toList();
 
-          if (state is EmployeesLoaded) {
-            final currentEmployee = state.employees.where((e) => e.endDate == null).toList();
-            final previousEmployee = state.employees.where((e) => e.endDate != null).toList();
+                  if (currentEmployee.isEmpty && previousEmployee.isEmpty) {
+                    return Center(
+                      child: Image.asset(
+                        'assets/images/no_data.png',
+                        height: 200,
+                      ),
+                    );
+                  }
 
-            if (currentEmployee.isEmpty && previousEmployee.isEmpty) {
-              return SizedBox(
-                width: MediaQuery.sizeOf(context).width,
-                height: MediaQuery.sizeOf(context).height,
-                child: Center(
-                  child: Image.asset(
-                    'assets/images/no_data.png',
-                    height: 200,
-                  ),
-                ),
-              );
-            }
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (currentEmployee.isNotEmpty) ...[
-                    const EmployeeTypeTitle(
-                      type: 'Current employees',
+                  return SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (currentEmployee.isNotEmpty) ...[
+                          const EmployeeTypeTitle(type: 'Current Employees'),
+                          ListView.builder(
+                            primary: false,
+                            shrinkWrap: true,
+                            itemCount: currentEmployee.length,
+                            itemBuilder: (context, index) {
+                              final employee = currentEmployee[index];
+                              return CurrentEmployeeWidget(
+                                employee: employee,
+                                onEdit: () => _openEmployeeFormScreen(context, employee: employee),
+                                onDelete: () {
+                                  context.read<EmployeeCubit>().deleteEmployee(employee);
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                        if (previousEmployee.isNotEmpty) ...[
+                          const EmployeeTypeTitle(type: 'Previous Employees'),
+                          ListView.builder(
+                            primary: false,
+                            shrinkWrap: true,
+                            itemCount: previousEmployee.length,
+                            itemBuilder: (context, index) {
+                              final employee = previousEmployee[index];
+                              return EmployeeWidget(
+                                employee: employee,
+                                isPastEmployee: true,
+                              );
+                            },
+                          ),
+                        ],
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            'Swipe left to delete',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      ],
                     ),
-                    ListView.separated(
-                      primary: false,
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: currentEmployee.length,
-                      separatorBuilder: (_, __) => Divider(height: 0, color: Colors.grey.shade200),
-                      itemBuilder: (_, int index) {
-                        final employee = currentEmployee[index];
+                  );
+                }
 
-                        return CurrentEmployeeWidget(
-                          employee: employee,
-                          onEdit: () => _openEmployeeFormScreen(context, employee: employee),
-                          onDelete: () {
-                            context.read<EmployeeCubit>().deleteEmployee(employee);
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                  if (previousEmployee.isNotEmpty) ...[
-                    const EmployeeTypeTitle(
-                      type: 'Previous employees',
-                    ),
-                    ListView.separated(
-                      primary: false,
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: previousEmployee.length,
-                      separatorBuilder: (_, __) => Divider(height: 0, color: Colors.grey.shade200),
-                      itemBuilder: (_, int index) {
-                        final employee = previousEmployee[index];
-
-                        return EmployeeWidget(
-                          employee: employee,
-                          isPastEmployee: true,
-                        );
-                      },
-                    ),
-                  ],
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Swipe left to delete', style: TextStyle(color: Colors.grey)), // Adds the message
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return const SizedBox();
+                return const SizedBox();
+              },
+            ),
+          );
         },
       ),
     );

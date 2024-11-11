@@ -1,27 +1,32 @@
-import 'objectbox.g.dart';
+import 'package:hive_flutter/adapters.dart';
+
 import 'tables/employee.dart';
 
 class AppDatabase {
-  late final Store _store;
+  static const String _boxName = 'employeeBox';
   late final Box<Employee> _employeeBox;
 
-  AppDatabase._create(this._store) {
-    _employeeBox = Box<Employee>(_store);
-  }
+  AppDatabase._create(this._employeeBox);
 
   static Future<AppDatabase> create() async {
-    final store = await openStore();
+    await Hive.initFlutter(); // Initialize Hive for Flutter
+    Hive.registerAdapter(EmployeeAdapter()); // Register the Employee adapter
+    final employeeBox = await Hive.openBox<Employee>(_boxName);
 
-    return AppDatabase._create(store);
+    return AppDatabase._create(employeeBox);
   }
 
-  List<Employee> getEmployees() => _employeeBox.getAll();
+  List<Employee> getEmployees() => _employeeBox.values.toList();
 
-  int addEmployee(Employee employee) => _employeeBox.put(employee);
+  int addEmployee(Employee employee) {
+    employee.id = _employeeBox.length + 1; // Assign a unique ID
+    _employeeBox.put(employee.id, employee);
+    return employee.id;
+  }
 
-  void updateEmployee(Employee employee) => _employeeBox.put(employee);
+  void updateEmployee(Employee employee) => _employeeBox.put(employee.id, employee);
 
-  void deleteEmployee(Employee employee) => _employeeBox.remove(employee.id);
+  void deleteEmployee(Employee employee) => _employeeBox.delete(employee.id);
 
-  void close() => _store.close();
+  void close() => _employeeBox.close();
 }
